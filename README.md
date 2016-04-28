@@ -1,7 +1,8 @@
-# xsmtp
+# xsmtp + xpop3 = xmail (now with crypto)
 
 A simple SMTP mail server, a tiny but complete realization of smtp protocol.
-
+A simple POP3 mail server, a tiny but complete realization of pop3 protocol.
+A client that will interact with these servers...
 
 ## Features
 
@@ -9,6 +10,11 @@ A simple SMTP mail server, a tiny but complete realization of smtp protocol.
 - Multithread: create a thread for each client's request  
 - Authentication: store username and passwd to a file
 - Base64 encode and decode  
+
+## Crypto
+- SHA256 salted hashes of passwords
+- RSA
+- HMAC
 
 ## Usage  
 1) Get the source    
@@ -23,6 +29,8 @@ Set the user data storage directory:
 vim conf.h
 ```
 Set the variable `data_dir` to `/home/YourName/data`. 
+
+## XSMTP
 
 3) Add files and user account
 ```
@@ -60,6 +68,34 @@ S: 221 Bye
 ```
 Well done!
 
+## XPOP3
+3) Recieve e-mail from a mail server
+Run the executable file in one terminal:  
+
+```
+sudo ./pop3
+```
+
+This started the mail server. And now you can recieve e-mail from the server in **another terminal** like this: 
+
+```
+telnet localhost 110
+S: +OK Welcome
+C: USER alice@localhost.com
+S: +OK
+C: PASS 123456
+S: +OK
+C: STAT
+S: +OK
+C: LIST
+S: +OK
+C: QUIT
+S: +OK
+```
+
+Well done!
+
+
 ## About SMTP protocal  
 
 This program is a simple mail dispatcher via smtp protocol. It runs only on Linux/Unix plantforms.
@@ -67,6 +103,12 @@ For more about SMTP, please refer to wiki and it's RFC documents:
 [wiki: Simple_Mail_Transfer_Protocol](http://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol)  
 [RFC 5321 – The Simple Mail Transfer Protocol](http://tools.ietf.org/html/rfc5321)  
 
+## About POP3 protocal  
+
+This program is a simple mail receiver via pop3 protocol. It runs only on Linux/Unix plantforms.
+For more about pop3 and it's RFC documents, please refer to wiki and RFC doc: 
+[Post_Office_Protocol](http://en.wikipedia.org/wiki/Post_Office_Protocol)  
+[Post Office Protocol - Version 3(STD 53)](http://tools.ietf.org/html/rfc1939)  
 
 ## Lisense
 
