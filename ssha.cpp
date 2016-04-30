@@ -1,5 +1,7 @@
 #include <openssl/sha.h>
 #include <openssl/rand.h>
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
 #include <iostream>
 #include <fstream>
 #include <stdio.h>
@@ -10,6 +12,8 @@ using namespace std;
 char* path = "data/users.txt";
 const int salt_len = 16;
 int pass_len = 0;
+int key_len = 2048;
+int pub_exp = 17;
 const string lookup = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
 char* create_salt(char* salt) {
@@ -40,10 +44,26 @@ void create_hash(unsigned char* pass_plain, unsigned char* pass_enc, int len) {
 	SHA256_Final(pass_enc, &context);
 }
 
-void write_to_file(string user, string salt, string pass) {
+void generate_pub_key(RSA* keypair, BIO* pub, char* pub_key) {
+    PEM_write_bio_RSAPublicKey(pub, keypair);
+
+    size_t pub_len = BIO_pending(pub);
+
+    pub_key = (char*)malloc(pub_len + 1);
+
+    BIO_read(pub, pub_key, pub_len);
+
+    pub_key[pub_len] = '\0';
+}
+
+void write_to_file(string user,  unsigned char* pass, 
+				   char* salt, char* key) {
 	ofstream file;
 	file.open(path, ios::app);
-	file << user << " " << pass << " " << salt << endl;
+	file << user << " " 
+		 << pass << " " 
+		 << salt << " " 
+		 << key << endl;
 	file.close();
 }
 
@@ -57,26 +77,35 @@ void ssha(string user, string pass_str) {
 	for (int i = 0; i < pass_str.size(); i++) { pass[i] = pass_str[i]; }
 	
 	// create and fill array to store salt
-	char salt[salt_len];
+	char salt[salt_len] = " ";
 	create_salt(salt);
 	
 	// create and fill array to store password + salt
 	char salted_pass[pass_len + salt_len];
 	add_salt(pass, salt, salted_pass);
+
+	cout << salt << endl;
 	
 	// copy signed password array into unsigned array for use by sha256
 	unsigned char pass_plain[pass_len + salt_len];
 	for (int i = 0; i < pass_len + salt_len; i++) { pass_plain[i] = salted_pass[i]; }
 	
+	cout << salt << endl;
+
 	// create and fill array to store sha256 output
 	unsigned char pass_enc[SHA256_DIGEST_LENGTH];
 	create_hash(pass_plain, pass_enc, sizeof(salted_pass));
+
+	cout << salt << endl;
+
+	RSA* keypair = RSA_generate_key(key_len, pub_exp, NULL, NULL);
+	BIO* pub = BIO_new(BIO_s_mem());
+	char* pub_key;
+	generate_pub_key(keypair, pub, pub_key);
 	
 	// write username , hashed password, and salt to text file
-	string pass_str_2((char*) pass);
-	string salt_str((char*) salt);
-	write_to_file(user, pass_str_2, salt_str);
-	
+	cout << salt << endl;
+	write_to_file(user, pass_enc, salt, pub_key);
 }
 
 int main() {
