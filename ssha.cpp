@@ -7,7 +7,7 @@
 
 using namespace std;
 
-char* path = "data/users.txt";
+char const * path = "data/users.txt";
 const int salt_len = 16;
 int pass_len = 0;
 const string lookup = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
@@ -21,8 +21,7 @@ char* create_salt(char* salt) {
 }
 
 char* add_salt(char* pass, char* salt, char* salted_pass) {
-		
-	// combine original password and salt
+  // combine original password and salt
 	// strcat was causing issues so i wrote it myself
 	for (int i = 0; i < pass_len; i++) { 
 		salted_pass[i] = pass[i]; 
@@ -34,7 +33,6 @@ char* add_salt(char* pass, char* salt, char* salted_pass) {
 
 void create_hash(unsigned char* pass_plain, unsigned char* pass_enc, int len) {
 	SHA256_CTX context;
-	
 	SHA256_Init(&context);
 	SHA256_Update(&context, pass_plain, len);
 	SHA256_Final(pass_enc, &context);

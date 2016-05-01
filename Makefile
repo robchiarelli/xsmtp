@@ -11,5 +11,8 @@ $(BIN_FILE): $(OBJ_FILES) xsmtp.cpp
 $(OBJ_FILES):
 	$(CC) $(CFLAGS) -c $(SRC_FILES)
 
+ssha: ssha.cpp
+	$(CC) $(CFLAGS) -o ssha ssha.cpp -lssl -lcrypto
+
 clean:
 	rm $(OBJ_FILES) $(BIN_FILE)
