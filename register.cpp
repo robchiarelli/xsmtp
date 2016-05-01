@@ -11,12 +11,10 @@ void ssha(string user, string pass_str) {
     // create and fill array to store password
     char pass[pass_str.size() + 1];
     strcpy(pass, pass_str.c_str());
-    cout << "Pass size: " << sizeof(pass) << endl;
 
     // create and fill array to store salt
     char salt[SALT_LEN];
     create_salt(salt);
-    cout << "Salt size: " << sizeof(salt) << endl;
 
     // create and fill array to store password + salt
     int salted_pass_len = pass_len + SALT_LEN;
