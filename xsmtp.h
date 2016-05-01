@@ -25,6 +25,8 @@
 #include "module_mail.h"
 #include "module_user.h"
 
+int xsmtp_main();
+
 #endif /* __XSMTP_H */
 
 // Local Variables:

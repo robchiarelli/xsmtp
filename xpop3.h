@@ -25,6 +25,8 @@
 #include "module_mail.h"
 #include "module_user.h"
 
+int xpop3_main();
+
 #endif /* #ifndef __XPOP3_H */
 
 // Local Variables:
