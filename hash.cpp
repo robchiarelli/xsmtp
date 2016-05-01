@@ -24,7 +24,6 @@ void add_salt(char* pass, char* salt, char* salted_pass) {
     // combine original password and salt
     strcpy(salted_pass, pass);
     strcat(salted_pass, salt);
-    cout << salted_pass << endl;
 }
 
 void create_hash(unsigned char* plain, unsigned char* digest) {
