@@ -30,7 +30,7 @@ void ssha(string user, string pass_str) {
     write_to_file(user, salt_str, hex_encode(hash, SHA256_DIGEST_LENGTH));
 }
 
-int main() {
+int register_main() {
     //string user = "robobert"
     //string pass_str = "password";
     string user;

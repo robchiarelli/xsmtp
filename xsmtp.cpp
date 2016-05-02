@@ -20,14 +20,14 @@
 
 #include "xsmtp.h"
 
-int mail_stat = 0;
+//int mail_stat = 0;
 int rcpt_user_num = 0;
 char from_user[30] = "";
 char rcpt_user[MAX_RCPT_USR][30] = {""};
 
-int quit(int arg);
+int quit_xsmtp(int arg);
 
-int main(int argc,char* argv[]) {
+int xsmtp_main() {
 	//signal(SIGINT, (void*)quit);  //go to MiniWebQuit when Ctrl+C key pressed.
 	//signal(SIGTERM, (void*)quit); //terminal signal
 	signal(SIGPIPE, SIG_IGN);     //ignore pipe signal.For more see http://www.wlug.org.nz/SIGPIPE
@@ -87,7 +87,7 @@ int main(int argc,char* argv[]) {
 	return 0;
 }
 
-int quit(int arg) {
+int quit_smtp(int arg) {
 	if (arg)
 		printf("\nS:Caught signal (%d). Mail server shutting down...\n\n", arg);
 	return 1;
