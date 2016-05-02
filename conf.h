@@ -28,8 +28,8 @@
 #define BUF_SIZE 1024
 
 // User information saving configurations
-const char data_dir[] = "/home/bill/data/";
-const char userinfo[] = "userinfo";
+const char data_dir[] = "/home/rob/xsmtp/data/";
+const char userinfo[] = "users.txt";
 const char userstat[] = "userstat";
 
 extern int mail_stat;

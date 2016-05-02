@@ -20,14 +20,14 @@
 
 #include "xsmtp.h"
 
-//int mail_stat = 0;
+int mail_stat = 0;
 int rcpt_user_num = 0;
 char from_user[30] = "";
 char rcpt_user[MAX_RCPT_USR][30] = {""};
 
 int quit_xsmtp(int arg);
 
-int xsmtp_main() {
+int main() {
 	//signal(SIGINT, (void*)quit);  //go to MiniWebQuit when Ctrl+C key pressed.
 	//signal(SIGTERM, (void*)quit); //terminal signal
 	signal(SIGPIPE, SIG_IGN);     //ignore pipe signal.For more see http://www.wlug.org.nz/SIGPIPE

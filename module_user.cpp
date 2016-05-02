@@ -29,11 +29,12 @@ int check_user() {
 
 	strcpy(file, data_dir);
 	strcat(file, userinfo);
-
+	cout << file << endl;
 	fp = fopen(file, "r");
 	while (fgets(data, sizeof(data), fp) > 0) {
-		if (strncmp(from_user, data, strlen(from_user)) == 0) // valid user
+		if (strncmp(from_user, data, strlen(from_user)) == 0){ // valid user
 			return 1;
+		}
 	}
 	return 0;
 }

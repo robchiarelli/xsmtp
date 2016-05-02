@@ -21,12 +21,12 @@
 #include "xpop3.h"
 
 int mail_stat = 0;
-//char rcpt_user[50] = "";
+char rcpt_user[50] = "";
 char rcpt_pass[50] = "";
 
 int quit_xpop3(int arg);
 
-int xpop3_main() {
+int main() {
 	//signal(SIGINT, (void*) quit); //go to MiniWebQuit when Ctrl+C key pressed.
 	//signal(SIGTERM, (void*) quit); //terminal signal
 	signal(SIGPIPE, SIG_IGN); //ignore pipe signal.For more see http://www.wlug.org.nz/SIGPIPE
