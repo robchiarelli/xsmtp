@@ -28,7 +28,7 @@
 #define BUF_SIZE 1024
 
 // User information saving configurations
-const char data_dir[] = "/home/rob/xsmtp/data/";
+const char data_dir[] = "/home/rob/xsmtp/smtp/data/";
 const char userinfo[] = "users.txt";
 const char userstat[] = "userstat";
 

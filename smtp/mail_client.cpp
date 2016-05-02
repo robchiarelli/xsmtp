@@ -42,20 +42,21 @@ int mail_client(char* hostname, int portno, string user) {
     if (connect(sock,(struct sockaddr *) &serv_addr,sizeof(serv_addr)) < 0) 
         cout << "ERROR connecting\n";
     //printf("Please enter the message: ");
-    bzero(buffer, 256);
-    string command = "HELO\n";
-    for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
-    n = write(sock, buffer, strlen(buffer));
-    if (n < 0) 
-         cout << "ERROR writing to socket\n";
-    bzero(buffer,256);
-    n = read(sock, buffer, 255);
-    if (n < 0) 
-         cout << "ERROR reading from socket\n";
-    printf("%s\n", buffer);
     
     // smtp
     if (portno == 25) { 
+    	bzero(buffer, 256);
+    	string command = "HELO\n";
+    	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
+    	n = write(sock, buffer, strlen(buffer));
+    	if (n < 0) 
+    		cout << "ERROR writing to socket\n";
+    	bzero(buffer,256);
+    	n = read(sock, buffer, 255);
+    	if (n < 0) 
+    		cout << "ERROR reading from socket\n";
+    	printf("%s\n", buffer);
+    
     	bzero(buffer, 256);
     	command = "MAIL FROM:<" + user + ">\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
@@ -125,7 +126,7 @@ int mail_client(char* hostname, int portno, string user) {
     // xpop3
     else if (portno == 110) {
     	bzero(buffer, 256);
-    	command = "USER " + user + "\n";
+    	string command = "USER " + user + "\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
     	n = write(sock, buffer, strlen(buffer));
     	if (n < 0) 
@@ -171,6 +172,7 @@ int mail_client(char* hostname, int portno, string user) {
     	if (n < 0) 
         	cout << "ERROR reading from socket\n";
     	printf("%s\n", buffer);
+    	
     }
     close(sock);
     return 0;

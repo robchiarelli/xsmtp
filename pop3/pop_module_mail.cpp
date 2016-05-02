@@ -55,7 +55,7 @@ void respond(int client_sockfd, char* request) {
 	if (strncmp(request, "USER", 4) == 0) {
 		char *pa,*pb;
 		pa = strchr(request, ' ');
-		pb = strchr(request,'\r');
+		pb = strchr(request,'\n');
 		for (int i = 0; i < strlen(rcpt_user); i++)  {
 			rcpt_user[i] = ' ';
 		}

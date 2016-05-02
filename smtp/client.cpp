@@ -32,13 +32,13 @@ int main() {
 			if (choice == 1) user = register_main();
 			else if (choice == 2) mail_client("localhost", 25, user);
 			else if (choice == 3) mail_client("localhost", 110, user);
-			else if (choice == 4) break;
+			else break;
 		}
 		else {
 			logged_out(choice);
 			if (choice == 1) user = register_main();
 			else if (choice == 2) login_flag = validate_user();
-			else if (choice == 4) break;
+			else break;
 		}
 	}
 	return 0;
