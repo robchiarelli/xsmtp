@@ -8,6 +8,17 @@
 #include <stdio.h>
 #include <string.h>
 #include <string>
+#include <assert.h>
+#include <iostream>
+using namespace std;
+
+string hex_encode(unsigned char* hash, int len) {
+    char tmp[len*2];
+    for(int i = 0, j = 0; i < len; i++, j+=2) {
+        sprintf(tmp + j, "%02x", hash[i]);
+    }
+    return string(tmp);
+}
 
 void RSA_keygen(EVP_PKEY** pkey) {
     EVP_PKEY_CTX *ctx;
@@ -54,7 +65,7 @@ int rsaEncrypt(const unsigned char *msg, size_t msgLen, unsigned char **encMsg, 
 int rsaDecrypt(unsigned char *encMsg, size_t encMsgLen, unsigned char *ek, size_t ekl, unsigned char *iv, size_t ivl, unsigned char **decMsg, EVP_PKEY* key) {
     EVP_CIPHER_CTX* rsaDecryptCtx = (EVP_CIPHER_CTX*)malloc(sizeof(EVP_CIPHER_CTX));
     EVP_CIPHER_CTX_init(rsaDecryptCtx);
-
+  
     size_t decLen   = 0;
     size_t blockLen = 0;
 
@@ -121,6 +132,13 @@ int hybrid_encrypt(unsigned char* pt, int pt_len, unsigned char** ct, int* ct_le
     memcpy(*ct + *ct_len + ekl + ivl, sig, sig_len);
     *ct_len = *ct_len + ekl + ivl + sig_len;
 
+    cout << "pt: " << hex_encode(pt, pt_len) << endl;
+    cout << "ct: " << hex_encode(*ct, *ct_len) << endl;
+    cout << "ek: " << hex_encode(ek, ekl) << endl;
+    cout << "iv: " << hex_encode(iv, ivl) << endl;
+    cout << "sig: " << hex_encode(sig, sig_len) << endl;
+
+
     free(ek);
     free(iv);
     free(sig);
@@ -134,10 +152,12 @@ int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_le
     int sig_len = EVP_PKEY_size(privkey);
     unsigned char* sig = (unsigned char*)malloc(sig_len);
     memcpy(sig, ct + ct_len - sig_len, sig_len);
+    unsigned char* ct2 = (unsigned char*)malloc(ct_len);
+    memcpy(ct2, ct, ct_len);
     EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
     const EVP_MD *md = EVP_sha256();
     if(!EVP_VerifyInit_ex(mdctx, md, NULL)) return FAILURE;
-    if(!EVP_VerifyUpdate(mdctx, ct, ct_len - sig_len)) return FAILURE;
+    if(!EVP_VerifyUpdate(mdctx, ct2, ct_len - sig_len)) return FAILURE;
     if((res = EVP_VerifyFinal(mdctx, sig, sig_len, pubkey)) <= 0) {
         if(res < 0) {
             ERR_print_errors_fp(stdout);
@@ -147,6 +167,9 @@ int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_le
     }
     EVP_MD_CTX_destroy(mdctx);
 
+    for(int i = 0; i < ct_len; i++) {
+        assert(ct[i] == ct2[i]);
+    }
 
     int ekl = EVP_PKEY_size(pubkey);
     unsigned char* ek = (unsigned char*)malloc(ekl);
@@ -154,7 +177,7 @@ int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_le
 
     int ivl = AES_IV_LEN;
     unsigned char* iv = (unsigned char*)malloc(ivl);
-    memcpy(iv, ct + ct_len - RSA_KEY_LEN - AES_IV_LEN, AES_IV_LEN);
+    memcpy(iv, ct + ct_len - sig_len - AES_IV_LEN, AES_IV_LEN);
 
     int cl = ct_len - (sig_len + ekl + ivl);
     unsigned char* dec;
@@ -162,6 +185,12 @@ int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_le
     dec_len = rsaDecrypt(ct, cl, ek, ekl, iv, ivl, &dec, privkey);
     *pt = dec;
     *pt_len = dec_len;
+
+    cout << "pt: " << hex_encode(*pt, *pt_len) << endl;
+    cout << "ct: " << hex_encode(ct, ct_len) << endl;
+    cout << "ek: " << hex_encode(ek, ekl) << endl;
+    cout << "iv: " << hex_encode(iv, ivl) << endl;
+    cout << "sig: " << hex_encode(sig, sig_len) << endl;
 
     free(sig);
     free(ek);
@@ -189,8 +218,11 @@ int main() {
     unsigned char* dec;
     int dec_len;
 
-    int status = hybrid_encrypt(plt, strlen((char*)plt) + 1, &cpt, &cpt_len, key2, key1);
-    printf("%s\n", status > 0? "SUCCESS":"FAILURE");
-    status = hybrid_decrypt(cpt, cpt_len, &dec, &dec_len, key1, key2);
+    cpt_len = rsaEncrypt(plt, 12, &cpt, &ek, (size_t*)&ekl, &iv, (size_t*)&ivl, key1);
+    dec_len = rsaDecrypt(cpt, cpt_len, ek, (size_t)ekl, iv, (size_t)ivl, &dec, key1);
+
+//    int status = hybrid_encrypt(plt, strlen((char*)plt) + 1, &cpt, &cpt_len, key2, key1);
+//    printf("%s\n", status > 0? "SUCCESS":"FAILURE");
+//    status = hybrid_decrypt(cpt, cpt_len, &dec, &dec_len, key1, key2);
     printf("%s", dec);
 }
