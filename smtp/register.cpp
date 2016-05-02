@@ -30,7 +30,7 @@ void ssha(string user, string pass_str) {
     write_to_file(user, salt_str, hex_encode(hash, SHA256_DIGEST_LENGTH));
 }
 
-int register_main() {
+string register_main() {
     //string user = "robobert"
     //string pass_str = "password";
     string user;
@@ -46,5 +46,5 @@ int register_main() {
     cout << endl;
     cout << "User registration complete.\n";
 
-    return 0;
+    return user;
 }
