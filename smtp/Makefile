@@ -16,5 +16,9 @@ $(OBJ_FILES):
 #	$(CC) $(CFLAGS) -c hash.cpp
 #	$(CC) -g hash.o -o register register.cpp -lssl -lcrypto
 
+xsmtp: xsmtp.cpp
+	$(CC) $(CFLAGS) -c module_mail.cpp module_user.cpp xsmtp.cpp
+	$(CC) -g module_mail.o module_user.o xsmtp.o -o xsmtp -lpthread
+
 clean:
 	rm $(OBJ_FILES) $(BIN_FILE)
