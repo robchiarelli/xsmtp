@@ -98,8 +98,8 @@ int mail_client(char* hostname, int portno, string user) {
     	
     	bzero(buffer, 256);
     	cout << "Enter your message: ";
-    	temp;
-    	cin >> temp;
+    	ws(cin);
+    	getline(cin, temp);
     	command = temp + "<CR><LF>";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
     	n = write(sock, buffer, strlen(buffer));
@@ -172,6 +172,8 @@ int mail_client(char* hostname, int portno, string user) {
     	if (n < 0) 
         	cout << "ERROR reading from socket\n";
     	printf("%s\n", buffer);
+    	
+    	cin.get();
     	
     }
     close(sock);
