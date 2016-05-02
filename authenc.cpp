@@ -17,6 +17,71 @@ void RSA_keygen(EVP_PKEY** pkey) {
     EVP_PKEY_keygen(ctx, pkey);
 }
 
+int rsaEncrypt(const unsigned char *msg, size_t msgLen, unsigned char **encMsg, unsigned char **ek, size_t *ekl, unsigned char **iv, size_t *ivl, EVP_PKEY* key) {
+    EVP_CIPHER_CTX* rsaEncryptCtx = (EVP_CIPHER_CTX*)malloc(sizeof(EVP_CIPHER_CTX));
+    EVP_CIPHER_CTX_init(rsaEncryptCtx);
+    size_t encMsgLen = 0;
+    size_t blockLen  = 0;
+
+    *ek = (unsigned char*)malloc(EVP_PKEY_size(key));
+    *iv = (unsigned char*)malloc(EVP_MAX_IV_LENGTH);
+    if(*ek == NULL || *iv == NULL) return FAILURE;
+    *ivl = EVP_MAX_IV_LENGTH;
+
+    *encMsg = (unsigned char*)malloc(msgLen + EVP_MAX_IV_LENGTH);
+    if(encMsg == NULL) return FAILURE;
+
+    if(!EVP_SealInit(rsaEncryptCtx, EVP_aes_128_cbc(), ek, (int*)ekl, *iv, &key, 1)) {
+        return FAILURE;
+    }
+
+    if(!EVP_SealUpdate(rsaEncryptCtx, *encMsg + encMsgLen, (int*)&blockLen, (const unsigned char*)msg, (int)msgLen)) {
+        return FAILURE;
+    }
+    encMsgLen += blockLen;
+
+    if(!EVP_SealFinal(rsaEncryptCtx, *encMsg + encMsgLen, (int*)&blockLen)) {
+        ERR_print_errors_fp(stdout);
+        return FAILURE;
+    }
+    encMsgLen += blockLen;
+
+    EVP_CIPHER_CTX_cleanup(rsaEncryptCtx);
+    free(rsaEncryptCtx);
+    return (int)encMsgLen;
+}
+
+int rsaDecrypt(unsigned char *encMsg, size_t encMsgLen, unsigned char *ek, size_t ekl, unsigned char *iv, size_t ivl, unsigned char **decMsg, EVP_PKEY* key) {
+    EVP_CIPHER_CTX* rsaDecryptCtx = (EVP_CIPHER_CTX*)malloc(sizeof(EVP_CIPHER_CTX));
+    EVP_CIPHER_CTX_init(rsaDecryptCtx);
+
+    size_t decLen   = 0;
+    size_t blockLen = 0;
+
+    *decMsg = (unsigned char*)malloc(encMsgLen + ivl);
+    if(decMsg == NULL) return FAILURE;
+    if(!EVP_OpenInit(rsaDecryptCtx, EVP_aes_128_cbc(), ek, ekl, iv, key)) {
+        ERR_print_errors_fp(stdout);
+        return FAILURE;
+    }
+
+    if(!EVP_OpenUpdate(rsaDecryptCtx, (unsigned char*)*decMsg + decLen, (int*)&blockLen, encMsg, (int)encMsgLen)) {
+        return FAILURE;
+    }
+    decLen += blockLen;
+
+    if(!EVP_OpenFinal(rsaDecryptCtx, (unsigned char*)*decMsg + decLen, (int*)&blockLen)) {
+        ERR_print_errors_fp(stdout);
+        return FAILURE;
+    }
+    decLen += blockLen;
+
+    EVP_CIPHER_CTX_cleanup(rsaDecryptCtx);
+    free(rsaDecryptCtx);
+    return (int)decLen;
+}
+
+
 void AES_keygen(unsigned char* key, unsigned char* iv) {
     srand(time(NULL));
     for(int i = 0; i < AES_KEY_LEN; i++) {
@@ -28,70 +93,52 @@ void AES_keygen(unsigned char* key, unsigned char* iv) {
 }
 
 int hybrid_encrypt(unsigned char* pt, int pt_len, unsigned char** ct, int* ct_len, EVP_PKEY* pubkey, EVP_PKEY* privkey) {
-    EVP_CIPHER_CTX *rsaEncryptCtx = EVP_CIPHER_CTX_new();
-
-    unsigned char* rsa_enc = (unsigned char*)malloc(pt_len + EVP_MAX_IV_LENGTH);
-    unsigned char* iv = (unsigned char*)malloc(AES_IV_LEN);
-    unsigned char* tag = (unsigned char*)malloc(AES_GCM_TAG_LEN);
-    unsigned char* ek = (unsigned char*)malloc(EVP_PKEY_size(pubkey));
-    int ekl = 0;
-    int enc_msg_len = 0;
-    int block_len  = 0;
-
-    EVP_CIPHER_CTX_ctrl(rsaEncryptCtx, EVP_CTRL_GCM_SET_IVLEN, AES_IV_LEN, NULL);
-    if(!EVP_SealInit(rsaEncryptCtx, EVP_aes_128_gcm(), &ek, &ekl, iv, &pubkey, 1)) return FAILURE;
-    if(!EVP_SealUpdate(rsaEncryptCtx, rsa_enc + enc_msg_len, &block_len, pt, pt_len)) return FAILURE;
-    enc_msg_len += block_len;
-    if(!EVP_SealFinal(rsaEncryptCtx, rsa_enc + enc_msg_len, &block_len)) return FAILURE;
-    enc_msg_len += block_len;
-    EVP_CIPHER_CTX_ctrl(rsaEncryptCtx, EVP_CTRL_GCM_GET_TAG, AES_GCM_TAG_LEN, tag);
-    EVP_CIPHER_CTX_cleanup(rsaEncryptCtx);
-    EVP_CIPHER_CTX_free(rsaEncryptCtx);
-
+    unsigned char* ek;
+    int ekl;
+    unsigned char* iv;
+    int ivl;
+    *ct_len = rsaEncrypt(pt, pt_len, ct, &ek, (size_t*)&ekl, &iv, (size_t*)&ivl, pubkey);
+    if(*ct_len == FAILURE) return FAILURE;
     unsigned char* sig = (unsigned char*)malloc(EVP_PKEY_size(privkey));
     unsigned int sig_len;
-    unsigned char* ek_iv_tag = (unsigned char*)malloc(ekl + AES_IV_LEN + AES_GCM_TAG_LEN);
-    memcpy(ek_iv_tag, ek, ekl);
-    memcpy(ek_iv_tag + ekl, iv, AES_IV_LEN);
-    memcpy(ek_iv_tag + ekl + AES_IV_LEN, tag, AES_GCM_TAG_LEN);
+    unsigned char* ct_ek_iv = (unsigned char*)malloc(*ct_len + ekl + ivl);
+    memcpy(ct_ek_iv, ct, *ct_len);
+    memcpy(ct_ek_iv + *ct_len, ek, ekl);
+    memcpy(ct_ek_iv + *ct_len + ekl, iv, ivl);
     EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
     const EVP_MD *md = EVP_sha256();
-    int md_len;
     if(!EVP_SignInit_ex(mdctx, md, NULL)) return FAILURE;
-    if(!EVP_SignUpdate(mdctx, ek_iv_tag, ekl + AES_IV_LEN + AES_GCM_TAG_LEN)) return FAILURE;
+    if(!EVP_SignUpdate(mdctx, ct_ek_iv, *ct_len + ekl + ivl)) return FAILURE;
     if(!EVP_SignFinal(mdctx, sig, &sig_len, privkey)) {
         ERR_print_errors_fp(stdout);
         return FAILURE;
     }
     EVP_MD_CTX_destroy(mdctx);
 
-    *ct_len = enc_msg_len + ekl + AES_IV_LEN + AES_GCM_TAG_LEN + sig_len;
-    *ct = (unsigned char*)malloc(*ct_len);
-    memcpy(*ct, rsa_enc, enc_msg_len);
-    memcpy(*ct + enc_msg_len, ek_iv_tag, ekl + AES_IV_LEN + AES_GCM_TAG_LEN);
-    memcpy(*ct + enc_msg_len + ekl + AES_IV_LEN + AES_GCM_TAG_LEN, sig, sig_len);
+    free(*ct);
+    *ct = (unsigned char*)malloc(*ct_len + ekl + ivl + sig_len);
+    memcpy(*ct, ct_ek_iv, *ct_len + ekl + ivl);
+    memcpy(*ct + *ct_len + ekl + ivl, sig, sig_len);
+    *ct_len = *ct_len + ekl + ivl + sig_len;
 
-    free(rsa_enc);
     free(ek);
     free(iv);
-    free(tag);
     free(sig);
-    free(ek_iv_tag);
+    free(ct_ek_iv);
     return SUCCESS;
 }
 
 int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_len, EVP_PKEY* pubkey, EVP_PKEY* privkey) {
     // I think here it's safe to assume that sig_len and ek_len will be 256
     int res;
-    unsigned char* ek_iv_tag = ct + ct_len - RSA_KEY_LEN - RSA_KEY_LEN - AES_IV_LEN - AES_GCM_TAG_LEN;
-    unsigned char* sig = (unsigned char*)malloc(RSA_KEY_LEN);
-    memcpy(sig, ct + ct_len - RSA_KEY_LEN, RSA_KEY_LEN);
+    int sig_len = EVP_PKEY_size(privkey);
+    unsigned char* sig = (unsigned char*)malloc(sig_len);
+    memcpy(sig, ct + ct_len - sig_len, sig_len);
     EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
     const EVP_MD *md = EVP_sha256();
-    int md_len;
     if(!EVP_VerifyInit_ex(mdctx, md, NULL)) return FAILURE;
-    if(!EVP_VerifyUpdate(mdctx, ek_iv_tag, RSA_KEY_LEN + AES_IV_LEN + AES_GCM_TAG_LEN)) return FAILURE;
-    if((res = EVP_VerifyFinal(mdctx, sig, RSA_KEY_LEN, pubkey)) <= 0) {
+    if(!EVP_VerifyUpdate(mdctx, ct, ct_len - sig_len)) return FAILURE;
+    if((res = EVP_VerifyFinal(mdctx, sig, sig_len, pubkey)) <= 0) {
         if(res < 0) {
             ERR_print_errors_fp(stdout);
             return FAILURE;
@@ -100,38 +147,25 @@ int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_le
     }
     EVP_MD_CTX_destroy(mdctx);
 
-    int enc_len = ct_len - RSA_KEY_LEN - RSA_KEY_LEN - AES_IV_LEN - AES_GCM_TAG_LEN;
-    unsigned char* enc = ct + ct_len - enc_len;
-    *pt = (unsigned char*)malloc(enc_len + EVP_MAX_IV_LENGTH);
-    *pt_len = 0;
-    int block_len = 0;
 
-    unsigned char* tag = ct + ct_len - RSA_KEY_LEN - AES_GCM_TAG_LEN;
-    int tag_len = AES_GCM_TAG_LEN;
-    unsigned char* iv = ct + ct_len - RSA_KEY_LEN - AES_IV_LEN - AES_GCM_TAG_LEN;
-    int iv_len = AES_IV_LEN;
-    unsigned char* ek = ek_iv_tag;
-    int ek_len = RSA_KEY_LEN;
+    int ekl = EVP_PKEY_size(pubkey);
+    unsigned char* ek = (unsigned char*)malloc(ekl);
+    memcpy(ek, ct + ct_len - sig_len - AES_IV_LEN - ekl, ekl);
 
+    int ivl = AES_IV_LEN;
+    unsigned char* iv = (unsigned char*)malloc(ivl);
+    memcpy(iv, ct + ct_len - RSA_KEY_LEN - AES_IV_LEN, AES_IV_LEN);
 
-    EVP_CIPHER_CTX* rsaDecryptCtx = EVP_CIPHER_CTX_new();
-
-    if(!EVP_OpenInit(rsaDecryptCtx, EVP_aes_128_gcm(), ek, ek_len, iv, privkey)) return FAILURE;
-    if(!EVP_OpenUpdate(rsaDecryptCtx, *pt + *pt_len, &block_len, enc, enc_len)) return FAILURE;
-    *pt_len += block_len;
-    if(!EVP_CIPHER_CTX_ctrl(rsaDecryptCtx, EVP_CTRL_GCM_SET_TAG, tag_len, tag)) return FAILURE;
-    if(!EVP_OpenFinal(rsaDecryptCtx, *pt + *pt_len, &block_len)) {
-        ERR_print_errors_fp(stdout);
-        return FAILURE;
-    }
-    *pt_len += block_len;
-
-    unsigned char* tmp = (unsigned char*)realloc(*pt, *pt_len);
-    if(tmp) *pt = tmp;
+    int cl = ct_len - (sig_len + ekl + ivl);
+    unsigned char* dec;
+    int dec_len;
+    dec_len = rsaDecrypt(ct, cl, ek, ekl, iv, ivl, &dec, privkey);
+    *pt = dec;
+    *pt_len = dec_len;
 
     free(sig);
-    EVP_CIPHER_CTX_free(rsaDecryptCtx);
-
+    free(ek);
+    free(iv);
     return SUCCESS;
 }
 
@@ -148,10 +182,15 @@ int main() {
     unsigned char* plt = (unsigned char*)"hello world";
     unsigned char* cpt;
     int cpt_len;
+    unsigned char* ek;
+    int ekl;
+    unsigned char* iv;
+    int ivl;
     unsigned char* dec;
     int dec_len;
 
-    int status = hybrid_encrypt(plt, strlen((char*)plt), &cpt, &cpt_len, key2, key1);
+    int status = hybrid_encrypt(plt, strlen((char*)plt) + 1, &cpt, &cpt_len, key2, key1);
     printf("%s\n", status > 0? "SUCCESS":"FAILURE");
     status = hybrid_decrypt(cpt, cpt_len, &dec, &dec_len, key1, key2);
+    printf("%s", dec);
 }

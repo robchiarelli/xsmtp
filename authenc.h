@@ -7,7 +7,7 @@
 
 #define RSA_KEY_LEN (2048/8)
 #define AES_KEY_LEN (128/8)
-#define AES_IV_LEN 12
+#define AES_IV_LEN 16
 #define AES_GCM_TAG_LEN 16
 
 #endif
