@@ -31,10 +31,12 @@ int check_user(char* username) {
 
 	ifstream file(path);
 	string line;
+	
 	while (getline(file, line)) {
 		size_t first = line.find(',');
 		string user = line.substr(0,first);
-		if (user == username) {
+		string username_str(username);
+		if (user.compare(username_str)) {
 			return 1;
 		}
 	}

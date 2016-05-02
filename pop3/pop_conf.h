@@ -26,7 +26,7 @@
 #define MAX_CLIENTS 32
 #define BUF_SIZE 1024
 
-const char data_dir[] = "/home/rob/xsmtp/pop3/data/";
+const char data_dir[] = "/home/rob/xsmtp/smtp/data/";
 const char userinfo[] = "users.txt";
 const char userstat[] = "userstat";
 

@@ -17,10 +17,6 @@ int mail_client(char* hostname, int portno, string user) {
     struct hostent *server;
 
     char buffer[256];
-    //if (argc < 3) {
-    //  fprintf(stderr,"usage %s hostname port\n", argv[0]);
-    //   exit(0);
-    //}
     if (portno == 25) mode = "smtp";
     else if (portno == 110) mode = "localhost";
     

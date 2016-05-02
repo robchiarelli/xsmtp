@@ -45,14 +45,10 @@ bool validate_user() {
     
     char salt[SALT_LEN + 1];
     strcpy(salt, salt_str.c_str());
-    
-    cout << salt << endl;
 	
 	char salted_pass[pass_str.size() + SALT_LEN];
 	add_salt(pass, salt, salted_pass);
-	
-	cout << salted_pass << endl;
-	
+
     // create and fill array to store sha256 output
     unsigned char hash[SHA256_DIGEST_LENGTH];
     create_hash((unsigned char *)salted_pass, hash);
