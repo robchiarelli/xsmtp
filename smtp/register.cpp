@@ -13,9 +13,11 @@ void ssha(string user, string pass_str) {
     strcpy(pass, pass_str.c_str());
 
     // create and fill array to store salt
-    char salt[SALT_LEN];
-    create_salt(salt);
-
+	string salt_temp = create_salt();
+	
+	char salt[SALT_LEN + 1];
+    strcpy(salt, salt_temp.c_str());
+    
     // create and fill array to store password + salt
     int salted_pass_len = pass_len + SALT_LEN;
     char salted_pass[salted_pass_len];
@@ -30,21 +32,17 @@ void ssha(string user, string pass_str) {
     write_to_file(user, salt_str, hex_encode(hash, SHA256_DIGEST_LENGTH));
 }
 
-int register_main() {
-    //string user = "robobert"
-    //string pass_str = "password";
-    string user;
+void register_main() {
+    string user_str;
     string pass_str;
 
     cout << "Enter username to register: ";
-    cin >> user;
+    cin >> user_str;
 
     cout << "Enter password: ";
     cin >> pass_str;
 
-    ssha(user, pass_str);
-    cout << endl;
-    cout << "User registration complete.\n";
-
-    return 0;
+    ssha(user_str, pass_str);
+    
+    cout << "\nUser registration complete.\n";
 }

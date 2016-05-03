@@ -69,6 +69,7 @@ void respond(int client_sockfd, char* request) {
 			pa = strchr(request, '<');
 			pb = strchr(request, '>');
 			strncpy(from_user, pa + 1, pb - pa - 1);
+			cout << "ye" << endl;
 			if (check_user()) {
 				send_data(client_sockfd, reply_code[6]);
 				mail_stat = 3;

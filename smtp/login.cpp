@@ -48,7 +48,7 @@ bool validate_user() {
 	
 	char salted_pass[pass_str.size() + SALT_LEN];
 	add_salt(pass, salt, salted_pass);
-	
+
     // create and fill array to store sha256 output
     unsigned char hash[SHA256_DIGEST_LENGTH];
     create_hash((unsigned char *)salted_pass, hash);
@@ -56,14 +56,3 @@ bool validate_user() {
 	if (hash_str == hex_encode(hash, SHA256_DIGEST_LENGTH)) return true;
 	else return false;
 }
-/*
-int main() {
-	string user;
-	string pass;
-	cout << "Enter your username: ";
-	cin >> user;
-	cout << "Enter your password: ";
-	cin >> pass;
-	validate_user(user, pass);
-}
-*/

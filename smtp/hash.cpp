@@ -12,18 +12,24 @@ using namespace std;
 char const * path = "data/users.txt";
 char const * alphanum = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
 
-void create_salt(char* salt) {
+string create_salt() {
     // create randomized string of characters of length SALT_LEN
+    string salt = "0000000000000000";
     srand(time(NULL));
     for (int i = 0; i < SALT_LEN; i++) {
         salt[i] = alphanum[rand() % (strlen(alphanum))];
     }
+    return salt;
 }
 
 void add_salt(char* pass, char* salt, char* salted_pass) {
     // combine original password and salt
     strcpy(salted_pass, pass);
     strcat(salted_pass, salt);
+    //for (int i = 0; i < strlen(pass); i++) salted_pass[i] = pass[i];
+    //for (int i = strlen(pass); i < strlen(pass) + strlen(salt); i++) {
+    //	salted_pass[i] = salt[i - strlen(pass)];
+    //}
 }
 
 void create_hash(unsigned char* plain, unsigned char* digest) {

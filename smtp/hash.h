@@ -7,7 +7,8 @@ extern char const * look;
 #define SALT_LEN 16
 #define SHA256_DIGEST_LENGTH 32
 
-void create_salt(char* salt);
+std::string create_salt();
+//void create_salt(char* salt);
 void add_salt(char* pass, char* salt, char* salted_pass);
 void create_hash(unsigned char* plain, unsigned char* digest);
 std::string hex_encode(unsigned char* hash, int len);

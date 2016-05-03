@@ -2,8 +2,8 @@ CC = g++
 CFLAGS = -g -O2
 CFLAGS_EXTRA = -lpthread -lssl -lcrypto
 BIN_FILE = client
-OBJ_FILES = module_mail.o module_user.o hash.o register.o login.o xsmtp.o xpop3.o client.o
-SRC_FILES = module_mail.cpp module_user.cpp hash.cpp register.cpp login.cpp xsmtp.cpp xpop3.cpp client.cpp
+OBJ_FILES = hash.o register.o login.o mail_client.o client.o
+SRC_FILES = hash.cpp register.cpp login.cpp mail_client.cpp client.cpp
 
 all: $(BIN_FILE)
 $(BIN_FILE): $(OBJ_FILES) client.cpp
@@ -15,6 +15,10 @@ $(OBJ_FILES):
 #register: register.cpp
 #	$(CC) $(CFLAGS) -c hash.cpp
 #	$(CC) -g hash.o -o register register.cpp -lssl -lcrypto
+
+xsmtp: xsmtp.cpp
+	$(CC) $(CFLAGS) -c module_mail.cpp module_user.cpp xsmtp.cpp
+	$(CC) -g module_mail.o module_user.o xsmtp.o -o xsmtp -lpthread
 
 clean:
 	rm $(OBJ_FILES) $(BIN_FILE)
