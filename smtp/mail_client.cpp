@@ -14,7 +14,7 @@
 using namespace std;
 
 char* message_path = "/home/rob/xsmtp/smtp/message.txt";
-char* py_path = "/home/rob/xsmtp/smtp/encrypt.py"
+char* py_path = "/home/rob/xsmtp/smtp/script.py"
 
 string read_from_file() {
 	ifstream file(message_path);
@@ -30,7 +30,7 @@ string read_from_file() {
 }
 
 void send_to_encrypt(string message) {
-	string command = "python script.py encrypt " + message;
+	string command = "python " + py_path + " encrypt " + message;
 	system(command.c_str());
 }
 
