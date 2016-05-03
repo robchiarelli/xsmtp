@@ -7,8 +7,29 @@
 #include <netinet/in.h>
 #include <netdb.h> 
 #include <iostream>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
+
+char* py_path = "/home/rob/xsmtp/smtp/message.txt";
+
+string read_from_file() {
+	ifstream file(py_path);
+	string line;
+	
+	//while (getline(file, line)) cout << line << endl;
+	stringstream buffer;
+	buffer << file.rdbuf();
+	string message = buffer.str();
+	file.close();
+	
+	return message;
+}
+
+void send_to_decrypt(string message) {
+
+}
 
 int mail_client(char* hostname, int portno, string user) {
 	int sock, n;
@@ -96,7 +117,13 @@ int mail_client(char* hostname, int portno, string user) {
     	cout << "Enter your message: ";
     	ws(cin);
     	getline(cin, temp);
-    	command = temp + "<CR><LF>";
+    	
+    	// send the plaintext message to be encrypted
+    	send_to_decrypt(temp);
+    	
+    	// read and send the now encrypted message
+    	string message = read_from_file();
+    	command = message + "<CR><LF>";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
     	n = write(sock, buffer, strlen(buffer));
     	if (n < 0) 
