@@ -42,7 +42,7 @@ int rsaEncrypt(const unsigned char *msg, size_t msgLen, unsigned char **encMsg, 
     *encMsg = (unsigned char*)malloc(msgLen + EVP_MAX_IV_LENGTH);
     if(encMsg == NULL) return FAILURE;
 
-    if(!EVP_SealInit(rsaEncryptCtx, EVP_aes_128_cbc(), ek, (int*)ekl, *iv, &key, 1)) {
+    if(!EVP_SealInit(rsaEncryptCtx, EVP_aes_256_gcm(), ek, (int*)ekl, *iv, &key, 1)) {
         return FAILURE;
     }
 
@@ -56,7 +56,6 @@ int rsaEncrypt(const unsigned char *msg, size_t msgLen, unsigned char **encMsg, 
         return FAILURE;
     }
     encMsgLen += blockLen;
-
     EVP_CIPHER_CTX_cleanup(rsaEncryptCtx);
     free(rsaEncryptCtx);
     return (int)encMsgLen;
@@ -65,18 +64,19 @@ int rsaEncrypt(const unsigned char *msg, size_t msgLen, unsigned char **encMsg, 
 int rsaDecrypt(unsigned char *encMsg, size_t encMsgLen, unsigned char *ek, size_t ekl, unsigned char *iv, size_t ivl, unsigned char **decMsg, EVP_PKEY* key) {
     EVP_CIPHER_CTX* rsaDecryptCtx = (EVP_CIPHER_CTX*)malloc(sizeof(EVP_CIPHER_CTX));
     EVP_CIPHER_CTX_init(rsaDecryptCtx);
-  
+
     size_t decLen   = 0;
     size_t blockLen = 0;
 
     *decMsg = (unsigned char*)malloc(encMsgLen + ivl);
     if(decMsg == NULL) return FAILURE;
-    if(!EVP_OpenInit(rsaDecryptCtx, EVP_aes_128_cbc(), ek, ekl, iv, key)) {
+    if(!EVP_OpenInit(rsaDecryptCtx, EVP_aes_256_gcm(), ek, ekl, iv, key)) {
         ERR_print_errors_fp(stdout);
         return FAILURE;
     }
 
     if(!EVP_OpenUpdate(rsaDecryptCtx, (unsigned char*)*decMsg + decLen, (int*)&blockLen, encMsg, (int)encMsgLen)) {
+        ERR_print_errors_fp(stdout);
         return FAILURE;
     }
     decLen += blockLen;
@@ -112,24 +112,27 @@ int hybrid_encrypt(unsigned char* pt, int pt_len, unsigned char** ct, int* ct_le
     if(*ct_len == FAILURE) return FAILURE;
     unsigned char* sig = (unsigned char*)malloc(EVP_PKEY_size(privkey));
     unsigned int sig_len;
-    unsigned char* ct_ek_iv = (unsigned char*)malloc(*ct_len + ekl + ivl);
-    memcpy(ct_ek_iv, ct, *ct_len);
-    memcpy(ct_ek_iv + *ct_len, ek, ekl);
-    memcpy(ct_ek_iv + *ct_len + ekl, iv, ivl);
-    EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
+    unsigned char* ek_iv_ct = (unsigned char*)malloc(ekl + ivl + *ct_len);
+    memcpy(ek_iv_ct, ek, ekl);
+    memcpy(ek_iv_ct + ekl, iv, ivl);
+    memcpy(ek_iv_ct + ekl + ivl, *ct, *ct_len);
+
+    EVP_MD_CTX *mdctx = (EVP_MD_CTX*)malloc(sizeof(EVP_MD_CTX));
+    EVP_MD_CTX_init(mdctx);
     const EVP_MD *md = EVP_sha256();
     if(!EVP_SignInit_ex(mdctx, md, NULL)) return FAILURE;
-    if(!EVP_SignUpdate(mdctx, ct_ek_iv, *ct_len + ekl + ivl)) return FAILURE;
+    if(!EVP_SignUpdate(mdctx, ek_iv_ct, ekl + ivl + *ct_len)) return FAILURE;
     if(!EVP_SignFinal(mdctx, sig, &sig_len, privkey)) {
         ERR_print_errors_fp(stdout);
         return FAILURE;
     }
-    EVP_MD_CTX_destroy(mdctx);
+    EVP_MD_CTX_cleanup(mdctx);
+    free(mdctx);
 
     free(*ct);
-    *ct = (unsigned char*)malloc(*ct_len + ekl + ivl + sig_len);
-    memcpy(*ct, ct_ek_iv, *ct_len + ekl + ivl);
-    memcpy(*ct + *ct_len + ekl + ivl, sig, sig_len);
+    *ct = (unsigned char*)malloc(sig_len + ekl + ivl + *ct_len);
+    memcpy(*ct, sig, sig_len);
+    memcpy(*ct + sig_len, ek_iv_ct, ekl + ivl + *ct_len);
     *ct_len = *ct_len + ekl + ivl + sig_len;
 
     cout << "pt: " << hex_encode(pt, pt_len) << endl;
@@ -142,7 +145,7 @@ int hybrid_encrypt(unsigned char* pt, int pt_len, unsigned char** ct, int* ct_le
     free(ek);
     free(iv);
     free(sig);
-    free(ct_ek_iv);
+    free(ek_iv_ct);
     return SUCCESS;
 }
 
@@ -151,13 +154,13 @@ int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_le
     int res;
     int sig_len = EVP_PKEY_size(privkey);
     unsigned char* sig = (unsigned char*)malloc(sig_len);
-    memcpy(sig, ct + ct_len - sig_len, sig_len);
-    unsigned char* ct2 = (unsigned char*)malloc(ct_len);
-    memcpy(ct2, ct, ct_len);
-    EVP_MD_CTX *mdctx = EVP_MD_CTX_create();
+    memcpy(sig, ct, sig_len);
+
+    EVP_MD_CTX *mdctx = (EVP_MD_CTX*)malloc(sizeof(EVP_MD_CTX));
+    EVP_MD_CTX_init(mdctx);
     const EVP_MD *md = EVP_sha256();
     if(!EVP_VerifyInit_ex(mdctx, md, NULL)) return FAILURE;
-    if(!EVP_VerifyUpdate(mdctx, ct2, ct_len - sig_len)) return FAILURE;
+    if(!EVP_VerifyUpdate(mdctx, ct + sig_len, ct_len - sig_len)) return FAILURE;
     if((res = EVP_VerifyFinal(mdctx, sig, sig_len, pubkey)) <= 0) {
         if(res < 0) {
             ERR_print_errors_fp(stdout);
@@ -165,24 +168,24 @@ int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_le
         }
         else return VERIFY_FAIL;
     }
-    EVP_MD_CTX_destroy(mdctx);
-
-    for(int i = 0; i < ct_len; i++) {
-        assert(ct[i] == ct2[i]);
-    }
+    EVP_MD_CTX_cleanup(mdctx);
+    free(mdctx);
 
     int ekl = EVP_PKEY_size(pubkey);
     unsigned char* ek = (unsigned char*)malloc(ekl);
-    memcpy(ek, ct + ct_len - sig_len - AES_IV_LEN - ekl, ekl);
+    memcpy(ek, ct + sig_len, ekl);
 
     int ivl = AES_IV_LEN;
     unsigned char* iv = (unsigned char*)malloc(ivl);
-    memcpy(iv, ct + ct_len - sig_len - AES_IV_LEN, AES_IV_LEN);
+    memcpy(iv, ct + ct_len + ekl, AES_IV_LEN);
 
-    int cl = ct_len - (sig_len + ekl + ivl);
+    int enc_len = ct_len - (sig_len + ekl + ivl);
+    unsigned char* enc = (unsigned char*)malloc(enc_len);
+    memcpy(enc, ct + ct_len + ekl + ivl, enc_len);
+
     unsigned char* dec;
     int dec_len;
-    dec_len = rsaDecrypt(ct, cl, ek, ekl, iv, ivl, &dec, privkey);
+    dec_len = rsaDecrypt(enc, enc_len, ek, ekl, iv, ivl, &dec, privkey);
     *pt = dec;
     *pt_len = dec_len;
 
@@ -195,6 +198,7 @@ int hybrid_decrypt(unsigned char* ct, int ct_len, unsigned char** pt, int* pt_le
     free(sig);
     free(ek);
     free(iv);
+    free(enc);
     return SUCCESS;
 }
 
@@ -208,7 +212,7 @@ int main() {
     printf("\n\n\n");
     PEM_write_PUBKEY(stdout, key2);
 
-    unsigned char* plt = (unsigned char*)"hello world";
+    unsigned char* plt = (unsigned char*)"hello world i am very angry right now. blah blah blah.";
     unsigned char* cpt;
     int cpt_len;
     unsigned char* ek;
@@ -218,11 +222,12 @@ int main() {
     unsigned char* dec;
     int dec_len;
 
-    cpt_len = rsaEncrypt(plt, 12, &cpt, &ek, (size_t*)&ekl, &iv, (size_t*)&ivl, key1);
-    dec_len = rsaDecrypt(cpt, cpt_len, ek, (size_t)ekl, iv, (size_t)ivl, &dec, key1);
+    //cpt_len = rsaEncrypt(plt, strlen((char*)plt), &cpt, &ek, (size_t*)&ekl, &iv, (size_t*)&ivl, key1);
+    //cout << hex_encode(cpt, cpt_len) << endl;
+    //dec_len = rsaDecrypt(cpt, cpt_len, ek, (size_t)ekl, iv, (size_t)ivl, &dec, key1);
 
-//    int status = hybrid_encrypt(plt, strlen((char*)plt) + 1, &cpt, &cpt_len, key2, key1);
-//    printf("%s\n", status > 0? "SUCCESS":"FAILURE");
-//    status = hybrid_decrypt(cpt, cpt_len, &dec, &dec_len, key1, key2);
+    int status = hybrid_encrypt(plt, strlen((char*)plt) + 1, &cpt, &cpt_len, key2, key1);
+    printf("%s\n", status > 0? "SUCCESS":"FAILURE");
+    status = hybrid_decrypt(cpt, cpt_len, &dec, &dec_len, key1, key2);
     printf("%s", dec);
 }
