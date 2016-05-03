@@ -35,12 +35,16 @@ int main() {
 	while(true) {
 		//int choice = 0
 		if (login_flag) {
+			cout << "yes1" << endl;
 			int choice = logged_in();
+			cout << "yes2" << endl;
 			if (choice == 1) register_main();
 			else if (choice == 2)  {
-				mail_client(25, user);
+				cout << "yes-1" << endl;
+				mail_client("localhost", 25, user);
+				cout << "yes0" << endl;
 			}
-			else if (choice == 3) mail_client(110, user);
+			else if (choice == 3) mail_client("localhost", 110, user);
 			else break;
 		}
 		else {
