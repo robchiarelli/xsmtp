@@ -9,12 +9,12 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <Python.h>
+//#include <Python.h>
 
 using namespace std;
 
 char* message_path = "/home/rob/xsmtp/smtp/message.txt";
-char* py_path = "/home/rob/xsmtp/smtp/script.py"
+string py_path = "/home/rob/xsmtp/hybrid.py";
 
 string read_from_file() {
 	ifstream file(message_path);
@@ -30,7 +30,13 @@ string read_from_file() {
 }
 
 void send_to_encrypt(string message) {
-	string command = "python " + py_path + " encrypt " + message;
+	ofstream file;
+	string f_path(message_path);
+	
+	file.open(message_path);
+	file << message << endl;
+	file.close();
+	string command = "python " + py_path + " encrypt " + f_path;
 	system(command.c_str());
 }
 
