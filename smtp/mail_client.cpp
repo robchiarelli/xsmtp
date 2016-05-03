@@ -29,8 +29,8 @@ string read_from_file() {
 	return message;
 }
 
-void send_to_decrypt(string message) {
-	string command = "./decrypt.py message.txt";
+void send_to_encrypt(string message) {
+	string command = "python script.py encrypt " + message;
 	system(command.c_str());
 }
 
@@ -44,6 +44,7 @@ int mail_client(char* hostname, int portno, string user) {
     if (portno == 25) mode = "smtp";
     else if (portno == 110) mode = "localhost";
     
+    // set up the socket
     sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) 
         cout << "ERROR opening socket\n";
@@ -52,7 +53,8 @@ int mail_client(char* hostname, int portno, string user) {
         fprintf(stderr,"ERROR, no such host\n");
         exit(0);
     }
-
+    
+	// connect to the socket
 	bzero((char *) &serv_addr, sizeof(serv_addr));
     serv_addr.sin_family = AF_INET;
     bcopy((char *)server->h_addr, 
@@ -65,6 +67,8 @@ int mail_client(char* hostname, int portno, string user) {
     
     // smtp
     if (portno == 25) { 
+        
+    	// send and receive for the HELO command
     	bzero(buffer, 256);
     	string command = "HELO\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
@@ -77,6 +81,7 @@ int mail_client(char* hostname, int portno, string user) {
     		cout << "ERROR reading from socket\n";
     	printf("%s\n", buffer);
     
+    	// send and receive for the MAIL command
     	bzero(buffer, 256);
     	command = "MAIL FROM:<" + user + ">\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
@@ -89,6 +94,8 @@ int mail_client(char* hostname, int portno, string user) {
         	cout << "ERROR reading from socket\n";
     	printf("%s\n", buffer);
     	
+    	    
+    	// send and receive for the RCPT command
     	bzero(buffer, 256);
     	cout << "Enter your recipient's email address: ";
     	string temp;
@@ -103,7 +110,8 @@ int mail_client(char* hostname, int portno, string user) {
     	if (n < 0) 
         	cout << "ERROR reading from socket\n";
     	printf("%s\n", buffer);
-    	
+    	    
+    	// send and receive for the DATA command
     	bzero(buffer, 256);
     	command = "DATA\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
@@ -122,7 +130,7 @@ int mail_client(char* hostname, int portno, string user) {
     	getline(cin, temp);
     	
     	// send the plaintext message to be encrypted
-    	send_to_decrypt(temp);
+    	send_to_encrypt(temp);
     	
     	// read and send the now encrypted message
     	string message = read_from_file();
@@ -151,6 +159,8 @@ int mail_client(char* hostname, int portno, string user) {
     }
     // xpop3
     else if (portno == 110) {
+    
+    	// send and receive for the USER command
     	bzero(buffer, 256);
     	string command = "USER " + user + "\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
@@ -162,7 +172,8 @@ int mail_client(char* hostname, int portno, string user) {
     	if (n < 0) 
         	cout << "ERROR reading from socket\n";
     	printf("%s\n", buffer);
-    	
+    	    
+    	// send and receive for the PASS command
     	bzero(buffer, 256);
     	command = "PASS password\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
@@ -175,6 +186,8 @@ int mail_client(char* hostname, int portno, string user) {
         	cout << "ERROR reading from socket\n";
     	printf("%s\n", buffer);
     	
+    	    
+    	// send and receive for the LIST command
     	bzero(buffer, 256);
     	command = "LIST\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];
@@ -186,7 +199,8 @@ int mail_client(char* hostname, int portno, string user) {
     	if (n < 0) 
         	cout << "ERROR reading from socket\n";
     	printf("%s\n", buffer);
-    	
+    	    
+    	// send and receive for the QUIT command
     	bzero(buffer, 256);
     	command = "QUIT\n";
     	for (int i = 0; i < command.size(); i++) buffer[i] = command[i];

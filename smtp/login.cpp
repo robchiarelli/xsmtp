@@ -12,6 +12,7 @@ char const * dir = "data/users.txt";
 
 //void validate_user(string user, string pass_str) {
 bool validate_user() {
+	// get user and pass input
 	string user;
 	string pass_str;
 	cout << "Enter your username: ";
@@ -19,6 +20,8 @@ bool validate_user() {
 	cout << "Enter your password: ";
 	cin >> pass_str;
 	
+	// parse userdata file to see if user exists
+	// if yes, acquire salt and hash
 	ifstream file(dir);
 	string line;
 	string salt_str;
@@ -40,12 +43,15 @@ bool validate_user() {
 		return false;
 	}
 	
+	// create and fill a buffer for the password
 	char pass[pass_str.size() + 1];
     strcpy(pass, pass_str.c_str());
     
+	// create and fill a buffer for the salt
     char salt[SALT_LEN + 1];
     strcpy(salt, salt_str.c_str());
 	
+	// create and fill a buffer for the salted password
 	char salted_pass[pass_str.size() + SALT_LEN];
 	add_salt(pass, salt, salted_pass);
 
