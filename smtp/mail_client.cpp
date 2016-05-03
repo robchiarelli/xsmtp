@@ -9,13 +9,15 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <Python.h>
 
 using namespace std;
 
-char* py_path = "/home/rob/xsmtp/smtp/message.txt";
+char* message_path = "/home/rob/xsmtp/smtp/message.txt";
+char* py_path = "/home/rob/xsmtp/smtp/encrypt.py"
 
 string read_from_file() {
-	ifstream file(py_path);
+	ifstream file(message_path);
 	string line;
 	
 	//while (getline(file, line)) cout << line << endl;
@@ -28,7 +30,8 @@ string read_from_file() {
 }
 
 void send_to_decrypt(string message) {
-
+	string command = "./decrypt.py message.txt";
+	system(command.c_str());
 }
 
 int mail_client(char* hostname, int portno, string user) {
