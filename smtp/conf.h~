@@ -25,10 +25,10 @@
 #define PORT 25  // use port 25, need root privilege
 #define MAX_CLIENTS 32
 #define MAX_RCPT_USR 50
-#define BUF_SIZE 2048
+#define BUF_SIZE 1024
 
 // User information saving configurations
-const char data_dir[] = "~/share/crypto2/xsmtp/smtp/data/";
+const char data_dir[] = "/home/rob/xsmtp/smtp/data/";
 const char userinfo[] = "users.txt";
 const char userstat[] = "userstat";
 

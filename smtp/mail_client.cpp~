@@ -219,4 +219,6 @@ int mail_client(int portno, string user) {
     	printf("%s\n", buffer);    	
     }
     close(sock);
+    return 0;
+	
 }
