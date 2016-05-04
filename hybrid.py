@@ -123,13 +123,13 @@ def RSA_decrypt(data, prikey):
     )
 
 def gen_payload(enc_aeskey, iv, tag, ciphertext):
-    return enc_aeskey.encode('hex') + '$' + iv.encode('hex') + '$' + tag.encode('hex') + '$' + ciphertext.encode('hex')
+    return enc_aeskey.encode('hex') + '$' + iv.encode('hex') + '$' + tag.encode('hex') + '$' + ciphertext.encode('hex') + '$'
 
 def sgen_payload(rsa_sig, enc_aeskey, iv, tag, ciphertext):
-    return rsa_sig.encode('hex') + '$' + enc_aeskey.encode('hex') + '$' + iv.encode('hex') + '$' + tag.encode('hex') + '$' + ciphertext.encode('hex')
+    return rsa_sig.encode('hex') + '$' + enc_aeskey.encode('hex') + '$' + iv.encode('hex') + '$' + tag.encode('hex') + '$' + ciphertext.encode('hex') + '$'
 
 def rec_payload(payload):
-    parts = [x.decode('hex') for x in payload.split('$')]
+    parts = [x.decode('hex') for x in payload.split('$')[:-1]]
     return tuple(parts)
 
 def hybrid_authencrypt(msg, pubkey, prikey):
@@ -178,7 +178,7 @@ if __name__ == "__main__":
         pub = RSA_load_pub(sys.argv[2])
         pri = RSA_load_key()
         enc = open("enc", "rb")
-        d = hybrid_authdecrypt(enc.read(), pub, pri)
+        d = hybrid_authdecrypt(enc.read().split('\n')[0], pub, pri)
         enc.close()
         out = open("dec", "wb")
         out.write(d)

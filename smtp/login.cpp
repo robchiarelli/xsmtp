@@ -11,7 +11,7 @@ using namespace std;
 char const * dir = "data/users.txt";
 
 //void validate_user(string user, string pass_str) {
-bool validate_user() {
+string validate_user() {
 	// get user and pass input
 	string user;
 	string pass_str;
@@ -40,7 +40,7 @@ bool validate_user() {
 	}
 	if (!user_flag) {
 		cout << "That username does not exist.\n";		
-		return false;
+		return "";
 	}
 	
 	// create and fill a buffer for the password
@@ -59,6 +59,6 @@ bool validate_user() {
     unsigned char hash[SHA256_DIGEST_LENGTH];
     create_hash((unsigned char *)salted_pass, hash);
 
-	if (hash_str == hex_encode(hash, SHA256_DIGEST_LENGTH)) return true;
-	else return false;
+	if (hash_str == hex_encode(hash, SHA256_DIGEST_LENGTH)) return user;
+	else return "";
 }

@@ -62,7 +62,8 @@ void ssha(string user, string pass_str) {
     // write username , hashed password, and salt to text file
     string salt_str((char*) salt, SALT_LEN);
     write_to_file(user, salt_str, hex_encode(hash, SHA256_DIGEST_LENGTH));
-    send_to_server(user, salt_str, hex_encode(hash, SHA256_DIGEST_LENGTH));
+    // ideally this would work, but it sometimes fails, so we cut it out
+    // send_to_server(user, salt_str, hex_encode(hash, SHA256_DIGEST_LENGTH));
 
 }
 

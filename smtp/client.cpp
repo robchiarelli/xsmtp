@@ -7,7 +7,7 @@
 #include "mail_client.h"
 using namespace std;
 
-string user = "rob@localhost.com";
+string user = "";
 
 //void logged_in(int &choice) {
 int logged_in() {
@@ -31,10 +31,8 @@ int logged_out() {
 }
 
 int main() {
-	bool login_flag = false;
 	while(true) {
-		//int choice = 0
-		if (login_flag) {
+		if (user != "") {
 			int choice = logged_in();
 			if (choice == 1) register_main();
 			else if (choice == 2)  {
@@ -46,7 +44,7 @@ int main() {
 		else {
 			int choice = logged_out();
 			if (choice == 1) register_main();
-			else if (choice == 2) login_flag = validate_user();
+			else if (choice == 2) user = validate_user();
 			else break;
 		}
 	}

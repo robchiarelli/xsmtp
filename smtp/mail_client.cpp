@@ -12,8 +12,8 @@
 
 using namespace std;
 
-char* message_path = "/home/rob/xsmtp/smtp/enc";
-string py_path = "/home/rob/xsmtp/hybrid.py";
+char* message_path = "enc";
+string py_path = "../hybrid.py";
 
 string read_from_file() {
 	ifstream file(message_path);
@@ -35,7 +35,7 @@ void send_to_encrypt(string message, string user) {
 	file.open(message_path);
 	file.close();
 	string command = "python " + py_path + " encrypt " +\
-					 user + " \"" + f_path + "\"";
+					 user + " \"" + message + "\"";
 	system(command.c_str());
 }
 
@@ -71,6 +71,7 @@ int mail_client(int portno, string user) {
         cout << "ERROR connecting\n";
     
     // smtp
+    string rec;
     if (portno == 25) { 
         
     	// send and receive for the HELO command
@@ -105,6 +106,7 @@ int mail_client(int portno, string user) {
     	cout << "Enter your recipient's email address: ";
     	string temp;
     	cin >> temp;
+      rec = temp;
     	string rcpt = "RCPT TO:<" + temp + ">\n";
     	for (int i = 0; i < rcpt.size(); i++) buffer[i] = rcpt[i];
     	n = write(sock, buffer, strlen(buffer));
@@ -135,7 +137,7 @@ int mail_client(int portno, string user) {
     	getline(cin, temp);
     	
     	// send the plaintext message to be encrypted
-    	send_to_encrypt(temp, user);
+    	send_to_encrypt(temp, rec);
     	
     	// read and send the now encrypted message
     	command = read_from_file();
