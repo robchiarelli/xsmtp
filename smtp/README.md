@@ -7,6 +7,7 @@ A client that will interact with these servers...
 
 ## Usage
 ```
+pip install cryptography
 python hybrid.py register "username,salt,hash"
 python hybrid.py keygen
 python hybrid.py encrypt username message
@@ -16,25 +17,30 @@ python hybrid.py decrypt username
 `hybrid.py` is used by the client application to encrypt and decrypt. It writes files `enc` for encyrption, `dec` for decryption, `reg` for registering. The client can read these files to display to user or send to server.
 
 ```
+make
 ./client
 ```
+Currently there are some warnings on compilation. Please ignore.
 Instructions in binary for how how to run.
+(It currently segfaults after message send, it doesn't affect message transmission.)
 
 ```
+make smtp
 ./xsmtp
 ```
 Explained below.
+To read encrypted message from server, go to user's mailbox directory, rename the selected message to `enc`, make sure you have sender.pub and key.priv in your directory, and run `python ../../../hybrid.py decrypt sender` where sender is the name of the user that sent the mail. The result is stored in a file called `dec`.
 
 ```
 python register.py
 ```
 (Currently not working)
-user registration server. Client sends registration information to it, encrypted with server's public key which is known to all parties. 
+user registration server. Client sends registration information to it, encrypted with server's public key which is known to all parties. The line to send the info to this server is in `register.cpp`, but is currently commented out. 
 
 ```
 ./xpop3
 ```
-Not working regularly. Not yet supported by client.
+Not working regularly. Not supported by client.
 
 
 ## Features
