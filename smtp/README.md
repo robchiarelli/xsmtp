@@ -4,6 +4,39 @@ A simple SMTP mail server, a tiny but complete realization of smtp protocol.
 A simple POP3 mail server, a tiny but complete realization of pop3 protocol.
 A client that will interact with these servers...
 
+
+## Usage
+```
+python hybrid.py register "username,salt,hash"
+python hybrid.py keygen
+python hybrid.py encrypt username message
+python hybrid.py decrypt username
+```
+
+`hybrid.py` is used by the client application to encrypt and decrypt. It writes files `enc` for encyrption, `dec` for decryption, `reg` for registering. The client can read these files to display to user or send to server.
+
+```
+./client
+```
+Instructions in binary for how how to run.
+
+```
+./xsmtp
+```
+Explained below.
+
+```
+python register.py
+```
+(Currently not working)
+user registration server. Client sends registration information to it, encrypted with server's public key which is known to all parties. 
+
+```
+./xpop3
+```
+Not working regularly. Not yet supported by client.
+
+
 ## Features
 
 - OS: only for Linux/Unix plantform  
