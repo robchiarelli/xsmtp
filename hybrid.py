@@ -122,23 +122,30 @@ def RSA_decrypt(data, prikey):
         )
     )
 
-def gen_payload(rsa_sig, enc_aeskey, iv, tag, ciphertext):
+def gen_payload(enc_aeskey, iv, tag, ciphertext):
+    return enc_aeskey.encode('hex') + '$' + iv.encode('hex') + '$' + tag.encode('hex') + '$' + ciphertext.encode('hex')
+
+def sgen_payload(rsa_sig, enc_aeskey, iv, tag, ciphertext):
     return rsa_sig.encode('hex') + '$' + enc_aeskey.encode('hex') + '$' + iv.encode('hex') + '$' + tag.encode('hex') + '$' + ciphertext.encode('hex')
 
 def rec_payload(payload):
-    import pdb
-    pdb.set_trace()
     parts = [x.decode('hex') for x in payload.split('$')]
     return tuple(parts)
 
-def hybrid_encrypt(msg, pubkey, prikey):
+def hybrid_authencrypt(msg, pubkey, prikey):
     aeskey = os.urandom(16)
     ek = RSA_encrypt(aeskey, pubkey)
     iv, ciphertext, tag = AES_gcm_encrypt(aeskey, msg)
     sig = RSA_sign(iv + ek + tag, prikey)
-    return gen_payload(sig, ek, iv, tag, ciphertext)
+    return sgen_payload(sig, ek, iv, tag, ciphertext)
 
-def hybrid_decrypt(msg, pubkey, prikey):
+def hybrid_encrypt(msg, pubkey):
+    aeskey = os.urandom(16)
+    ek = RSA_encrypt(aeskey, pubkey)
+    iv, ciphertext, tag = AES_gcm_encrypt(aeskey, msg)
+    return gen_payload(ek, iv, tag, ciphertext);
+
+def hybrid_authdecrypt(msg, pubkey, prikey):
     sig, ek, iv, tag, ciphertext = rec_payload(msg)
     if(RSA_verify(iv + ek + tag, sig, pubkey)):
         aeskey = RSA_decrypt(ek, prikey)
@@ -147,25 +154,40 @@ def hybrid_decrypt(msg, pubkey, prikey):
     else:
         return ""
 
+def hybrid_decrypt(msg, prikey):
+    ek, iv, tag, ciphertext = rec_payload(msg)
+    aeskey = RSA_decrypt(ek, prikey)
+    dec = AES_gcm_decrypt(aeskey, ciphertext, iv, tag)
+    return dec
+
 
 #rsakey = RSA.generate(2048, e=65537)
 #public key
 
-if sys.argv[1] == "keygen":
-    RSA_save_key(RSA_keygen())
-elif sys.argv[1] == "encrypt":
-    pub = RSA_load_pub(sys.argv[2])
-    pri = RSA_load_key()
-    e = hybrid_encrypt(sys.argv[3], pub, pri)
-    out = open("enc", "wb")
-    out.write(e)
-    out.close()
-elif sys.argv[1] == "decrypt":
-    pub = RSA_load_pub(sys.argv[2])
-    pri = RSA_load_key()
-    enc = open("enc", "rb")
-    d = hybrid_decrypt(enc.read(), pub, pri)
-    enc.close()
-    out = open("dec", "wb")
-    out.write(d)
-    out.close()
+if __name__ == "__main__":
+    if sys.argv[1] == "keygen":
+        RSA_save_key(RSA_keygen())
+    elif sys.argv[1] == "encrypt":
+        pub = RSA_load_pub(sys.argv[2])
+        pri = RSA_load_key()
+        e = hybrid_authencrypt(sys.argv[3], pub, pri)
+        out = open("enc", "wb")
+        out.write(e)
+        out.close()
+    elif sys.argv[1] == "decrypt":
+        pub = RSA_load_pub(sys.argv[2])
+        pri = RSA_load_key()
+        enc = open("enc", "rb")
+        d = hybrid_authdecrypt(enc.read(), pub, pri)
+        enc.close()
+        out = open("dec", "wb")
+        out.write(d)
+        out.close()
+    if sys.argv[1] == "register":
+        pub = RSA_load_pub("server")
+        RSA_save_key(RSA_keygen())
+        mykey = b64encode(open("key.pub", "rb").read())
+        e = hybrid_encrypt(sys.argv[2]+"," + mykey + "\n", pub)
+        out = open("reg", "wb")
+        out.write(e)
+        out.close()

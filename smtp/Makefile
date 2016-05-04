@@ -21,4 +21,4 @@ xsmtp: xsmtp.cpp
 	$(CC) -g module_mail.o module_user.o xsmtp.o -o xsmtp -lpthread
 
 clean:
-	rm $(OBJ_FILES) $(BIN_FILE)
+	rm $(OBJ_FILES) $(BIN_FILE) xsmtp
